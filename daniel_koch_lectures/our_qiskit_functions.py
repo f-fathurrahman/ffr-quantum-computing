@@ -81,3 +81,60 @@ def Wavefunction(obj, *args, **kwargs):
                 wavefunction += '\n'
 
     print(wavefunction)
+
+
+def Measurement(qc, *args, **kwargs):
+    #
+    p_M = True
+    S = 1
+    ret = False
+    NL = False
+    #
+    if "shots" in kwargs:
+        S = int(kwargs["shots"])
+    #
+    if "return_M" in kwargs:
+        ret = kwargs["return_M"]
+    #
+    if "print_M" in kwargs:
+        p_M = kwargs["print_M"]
+    #
+    if "column" in kwargs:
+        NL = kwargs["column"]
+
+    print("S = ", S)
+
+    M1 = execute(qc, M_simulator, shots=S).result().get_counts()
+    M2 = {}
+    k1 = list(M1.keys())
+    v1 = list(M1.values())
+    for k in range(len(k1)):
+        key_list = list(k1[k])
+        new_key = ""
+        for j in range(len(key_list)):
+            new_key = new_key + key_list[len(key_list) - (j+1)]
+        M2[new_key] = v1[k]
+
+    if p_M:
+        k2 = list(M2.keys())
+        v2 = list(M2.values())
+        measurements = ""
+        for i in range(len(k2)):
+            m_str = str(v2[i]) + "|"
+            for j in range(len(k2[i])):
+                if k2[i][j] == "0":
+                    m_str = m_str + "0"
+                if k2[i][j] == "1":
+                    m_str = m_str + "1"
+                if k2[i][j] == " ":
+                    m_str = m_str + ">|"
+            m_str = m_str + ">    "
+            if NL:
+                m_str = m_str + "\n"
+            measurements = measurements + m_str
+        print(measurements)
+    
+    if ret:
+        return M2
+
+    print("Should not pass here")

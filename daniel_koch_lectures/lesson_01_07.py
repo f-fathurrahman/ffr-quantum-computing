@@ -11,11 +11,16 @@ q = QuantumRegister(2)
 c = ClassicalRegister(2)
 qc = QuantumCircuit(q, c)
 
-qc.h(q[0])
+qc.id(q[0])
 qc.h(q[1])
 qc.measure(q, c)
 
-job = execute(qc, M_simulator)
-result = job.result()
-rescnt = result.get_counts(qc)
-print("rescnt = ", rescnt)
+#job = execute(qc, M_simulator)
+#result = job.result()
+#rescnt = result.get_counts(qc)
+#print("rescnt = ", rescnt)
+
+import our_qiskit_functions as oqf
+oqf.Measurement(qc, shots=1024)
+
+

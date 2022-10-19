@@ -19,6 +19,7 @@ print("\nInitial state")
 oqf.Wavefunction(test_g)
 
 f = oqf.blackbox_g_D(test_g, q)
+print("f = ", f)
 
 print("\nAfter blackbox")
 oqf.Wavefunction(test_g)

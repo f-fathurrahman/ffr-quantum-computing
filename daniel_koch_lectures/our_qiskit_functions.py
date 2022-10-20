@@ -133,8 +133,45 @@ def Measurement(qc, *args, **kwargs):
                 m_str = m_str + "\n"
             measurements = measurements + m_str
         print(measurements)
+        return
     
     if ret:
         return M2
 
     print("Should not pass here")
+
+
+# qc will be modified
+def blackbox_g_D(qc, qreg):
+    f_type = ['f(0,1) -> (0,1)', 'f(0,1) -> (1,0)', 'f(0,1) -> 0', 'f(0,1) -> 1']
+    idx_rand = np.random.randint(0, 4) # 4: exclusive
+    #
+    print("idx_rand = ", idx_rand)
+    #
+    if idx_rand == 0:
+        qc.cx(qreg[0], qreg[1])
+
+    if idx_rand == 1:
+        qc.x(qreg[0])
+        qc.cx(qreg[0], qreg[1])
+        qc.x(qreg[0])
+    
+    if idx_rand == 2:
+        qc.id(qreg[0])
+        qc.id(qreg[1])
+    
+    if idx_rand == 3:
+        qc.x(qreg[1])
+    
+    return f_type[idx_rand]
+
+
+def deutsch(qc, qreg):
+    qc.h(qreg[0])
+    qc.h(qreg[1])
+    f = blackbox_g_D(qc, qreg)
+    qc.h(qreg[0])
+    qc.h(qreg[1])
+    return f
+
+

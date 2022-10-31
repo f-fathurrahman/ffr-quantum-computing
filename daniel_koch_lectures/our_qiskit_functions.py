@@ -138,8 +138,6 @@ def Measurement(qc, *args, **kwargs):
     if ret:
         return M2
 
-    print("Should not pass here")
-
 
 # qc will be modified
 def blackbox_g_D(qc, qreg):

@@ -145,7 +145,7 @@ def Measurement(qc, *args, **kwargs):
 def blackbox_g_D(qc, qreg):
     f_type = ['f(0,1) -> (0,1)', 'f(0,1) -> (1,0)', 'f(0,1) -> 0', 'f(0,1) -> 1']
     idx_rand = np.random.randint(0, 4) # 4: exclusive
-    #
+    #idx_rand = 3
     print("idx_rand = ", idx_rand)
     #
     if idx_rand == 0:
@@ -155,7 +155,7 @@ def blackbox_g_D(qc, qreg):
         qc.x(qreg[0])
         qc.cx(qreg[0], qreg[1])
         qc.x(qreg[0])
-    
+
     if idx_rand == 2:
         qc.id(qreg[0])
         qc.id(qreg[1])

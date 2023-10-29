@@ -141,9 +141,12 @@ def Measurement(qc, *args, **kwargs):
 
 # qc will be modified
 def blackbox_g_D(qc, qreg):
-    f_type = ['f(0,1) -> (0,1)', 'f(0,1) -> (1,0)', 'f(0,1) -> 0', 'f(0,1) -> 1']
-    idx_rand = np.random.randint(0, 4) # 4: exclusive
-    #idx_rand = 3
+    f_type = [
+        'f(0,1) -> (0,1)', 'f(0,1) -> (1,0)',  # balanced
+        'f(0,1) -> 0', 'f(0,1) -> 1' # constant
+    ]
+    #idx_rand = np.random.randint(0, 4) # 4: exclusive
+    idx_rand = 3
     print("idx_rand = ", idx_rand)
     #
     if idx_rand == 0:
@@ -171,5 +174,26 @@ def deutsch(qc, qreg):
     qc.h(qreg[0])
     qc.h(qreg[1])
     return f
+
+def blackbox_g_DJ(Q, qc, qreg, an1):
+    f_type = ["constant", "balanced"]
+    f = []
+    #r = int( math.floor(2**Q * np.random.rand() ) )
+    #r = np.random.randint(0, 2**Q)
+    r = 0
+    print("r = ", r)
+    control = []
+    for i in range(Q):
+        control.append(qreg[i])
+    print(control)
+
+    if r == 0:
+        for i in range(Q):
+            qc.id(qreg[i])
+        f.append(f_type[0])
+
+    return f
+
+
 
 

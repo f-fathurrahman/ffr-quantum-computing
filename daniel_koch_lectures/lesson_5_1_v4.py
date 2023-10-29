@@ -9,6 +9,7 @@ q = QuantumRegister(2, name="q")
 c = ClassicalRegister(2, name="c")
 deutsch_qc = QuantumCircuit(q, c, name="qc")
 
+# Prepare |10> (using Qiskit notation)
 deutsch_qc.id(q[0])
 deutsch_qc.x(q[1])
 

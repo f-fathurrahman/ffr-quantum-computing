@@ -1,3 +1,4 @@
+# q is either 0 or 1
 def f_v1(q):
     return q
 
@@ -22,6 +23,6 @@ def g(f, q1, q2):
 
 for q1 in [0,1]:
     for q2 in [0,1]:
-        print("%1d%1d -> %1d%1d" % (q1, q2, *g(f_v1, q1, q2)))
+        print("%1d%1d -> %1d%1d" % (q1, q2, *g(f_v2, q1, q2)))
 
 

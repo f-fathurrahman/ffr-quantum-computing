@@ -3,10 +3,10 @@ import math
 from absl.testing import absltest
 import numpy as np
 
-from . import bell
-from . import helper
-from . import ops
-from . import state
+from qc4p import bell
+from qc4p import helper
+from qc4p import ops
+from qc4p import state
 
 
 class EqualitiesTest(absltest.TestCase):

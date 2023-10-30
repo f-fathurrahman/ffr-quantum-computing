@@ -18,7 +18,7 @@ state.dump_state(ψ)
 ket00 = ket0 * ket0
 state.dump_state(ket00)
 
-ket10 = ket1 * ket0
+ket10 = ket1 * ket0 # |10>
 state.dump_state(ket10)
 
 psi = 0.1*ket00 - 0.1j*ket10

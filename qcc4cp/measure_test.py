@@ -3,8 +3,8 @@ import math
 
 from absl.testing import absltest
 
-from . import ops
-from . import state
+from qc4p import ops
+from qc4p import state
 
 
 class MeasureTest(absltest.TestCase):

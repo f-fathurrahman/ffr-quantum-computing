@@ -6,7 +6,7 @@ import numpy as np
 S_simulator = Aer.backends(name="statevector_simulator")[0]
 M_simulator = Aer.backends(name="qasm_simulator")[0]
 
-USING_QISKIT_CONVENTION = False
+USING_QISKIT_CONVENTION = True
 
 def toBinary(number, total):
     Nqubits = int( math.log2(total) )

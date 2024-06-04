@@ -338,15 +338,20 @@ print("Exact (from G16):          {:+2.8} Eh".format(-1.1457416808))
 # initial basis, put in |01> state with Sx operator on q0
 psi0 = np.zeros((4,1))
 psi0[0] = 1
+
+# %%
+psi0
+
+# %%
 psi0 = np.dot(np.kron(I,Sx),psi0)
-print(psi0)
+psi0
 
 
 # %% [markdown]
 # We haven't defined our VQE ansatz yet, but before we do, let's write a function to return the expected value of the Hamiltonian `Hmol` given an `ansatz`, its parameter `theta`, and the initial state `psi0`. This ansatz will eventually be encoded by the quantum circuit.
 
 # %%
-def expected(theta,ansatz,Hmol,psi0):
+def expected(theta, ansatz, Hmol, psi0):
     circuit = ansatz(theta[0])
     psi = np.dot(circuit,psi0)
     return np.real(np.dot(psi.conj().T,np.dot(Hmol,psi)))[0,0]
@@ -356,31 +361,42 @@ def expected(theta,ansatz,Hmol,psi0):
 # With the expectation value in had, we now define an ansatz. In the O'Malley paper, they utilize the Unitary Coupled Cluster (UCC) ansatz, which in this case depends only on a single parameter $\theta$:
 #
 # $U(\theta) = \mathrm{exp}\left(-i\theta X_0Y_1\right)$
-#
-# so that a parameterized wave function $|\psi(\theta)\rangle$ for the ground state of H$_2$ is given as
+
+# %% [markdown]
+# Parameterized wave function $|\psi(\theta)\rangle$ for the ground state of H$_2$ is given as
 #
 # $|\psi(\theta)\rangle = \mathrm{exp}\left(-i\theta X_0Y_1\right)|01\rangle$
 #
 # and $X_0Y_1$ is the tensor product of the Pauli-X on qubit 0 and Pauli-Y on qubit 1.
-#
+
+# %% [markdown]
 # Before thinking about how we might represent $U(\theta)$ as a series of quantum gates, let's plug it into the expression
 #
-# $E(\theta) = \frac{\langle \psi | U^{\dagger}(\theta)\hat{H}_{\mathrm{mol}}U(\theta)|\psi\rangle}{\langle \psi | U^{\dagger}(\theta)U(\theta)|\psi\rangle} = \langle \psi | U^{\dagger}(\theta)\hat{H}_{\mathrm{mol}}U(\theta)|\psi\rangle$
-#
+# $$
+# E(\theta) = \frac{\langle \psi | U^{\dagger}(\theta)\hat{H}_{\mathrm{mol}}U(\theta)|\psi\rangle}{\langle \psi | U^{\dagger}(\theta)U(\theta)|\psi\rangle} = \langle \psi | U^{\dagger}(\theta)\hat{H}_{\mathrm{mol}}U(\theta)|\psi\rangle
+# $$
+
+# %% [markdown]
 # (Note that as long as $\psi$ is normalized and $U$ is unitary, we can ignore the normalization $\langle \psi | U^{\dagger}(\theta)U(\theta)|\psi\rangle$, since it always equals 1.)
-#
+
+# %% [markdown]
 # Given the `ansatz` and the initial state `psi0`, we can minimize `expected()` using the classical optimizers in the `scipy` package. So straightforwardly plugging in and minimizing yields the lazy result:
 
 # %%
 from scipy.linalg import expm
 from scipy.optimize import minimize
 
-# our UCC ansatz, not yet represented in terms of quantum gates
-ansatz = lambda theta: expm(-1j*np.array([theta])*np.kron(Sy,Sx))
 
+# %%
+# our UCC ansatz, not yet represented in terms of quantum gates
+def ansatz(theta):
+    return expm(-1j*np.array([theta])*np.kron(Sy,Sx))
+
+
+# %%
 # initial guess for theta
 theta  = [0.0]
-result = minimize(expected,theta,args=(ansatz,Hmol,psi0))
+result = minimize(expected, theta, args=(ansatz,Hmol,psi0), options={'disp': True})
 theta  = result.x[0]
 val    = result.fun
 
@@ -388,28 +404,22 @@ print("Lazy VQE: ")
 print("  [+] theta:  {:+2.8} deg".format(theta))
 print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
 
+
 # %% [markdown]
 # Which equals the result we got from diagonalization of the Hamiltonian. So we know that the UCC ansatz works! But we were lazy and didn't bother to think about how the quantum computer would compute the exponential. So, how do we represent the UCC ansatz in terms of quantum gates acting on the initial qubit state?
-#
+
+# %% [markdown]
 # ### A "real" quantum circuit
-#
-# So before we saw the UCC ansatz works, but we cheated by keeping it as a matrix exponential. This is not a suitable form for a quantum computer. Let's do better.
-#
-# According to the O'Malley paper , we can represent $U(\theta)$ for this problem as:
-#
-# <img src="circuit_close.png" width="500">
-#
-# This means that we should change our ansatz to read
 
 # %%
 # read right-to-left (bottom-to-top?)
-
-ansatz = lambda theta: (np.dot(np.dot(np.kron(-Ry(np.pi/2),Rx(np.pi/2)),
-                        np.dot(CNOT10, 
-                        np.dot(np.kron(I,Rz(theta)),
-                               CNOT10))),
-                               np.kron(Ry(np.pi/2),-Rx(np.pi/2))))
-
+def ansatz(theta):
+    return ( np.dot(np.dot(np.kron(-Ry(np.pi/2), Rx(np.pi/2)),
+             np.dot(CNOT10, 
+                np.dot(np.kron(I,Rz(theta)),
+                CNOT10))),
+                np.kron(Ry(np.pi/2),-Rx(np.pi/2)))
+           )
 
 
 # %% [markdown]
@@ -417,7 +427,7 @@ ansatz = lambda theta: (np.dot(np.dot(np.kron(-Ry(np.pi/2),Rx(np.pi/2)),
 
 # %%
 theta  = [0.0]
-result = minimize(expected,theta,args=(ansatz,Hmol,psi0))
+result = minimize(expected,theta,args=(ansatz,Hmol,psi0), options={'disp': True})
 theta  = result.x[0]
 val    = result.fun
 
@@ -428,16 +438,20 @@ print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
 
 # %% [markdown]
 # Which is the correct answer! Since we can now compute the expectation value of our Hamiltonian using quantum gates, we can pass the computed energy to a classical optimizer, which gives new parameters for the quantum gates. When this process is repeated until convergence, we obtain the FCI ground state energy. Also, once we have the optimized wave function parameters, the ground state can be easily reconstructed for additional simulations, etc.
-#
+
+# %% [markdown]
 # You might have noticed, though, that the above is still not sufficient for a quantum computer. The reason is that although we have represented our wave function with quantum gates, the *measurement* of the expectation value is still poorly defined as a physical operation. Even if you have prepared your qubits to represent a molecular wave function, measuring the expectation value of the Hamiltonian is not simply accomplished physically by applying a "Hamiltonian operation". 
-#
+
+# %% [markdown]
 # An analogy: similar to classical computation, you might want a string, or float, or whatever as the "true" output of your function, but for the computer to compute it for you -- it needs to ultimately be in binary. Same thing for the quantum computer. Our function should ultimately return the energy, but it needs to process this in terms of quantum bits. 
-#
-#
+
+# %% [markdown]
 # ### A "real" measurement of the energy
-#
+
+# %% [markdown]
 # All that is to say that we were cheating again. Experimentally, the "only" measurements we can make are those which probe the final quantum state of the qubits. What we need a way to connect measurements of qubits to an expression for the expectation value of the molecular electronic Hamiltonian.
-#
+
+# %% [markdown]
 # Put another way, the problem stems back to our defintion of the expected value:
 #
 # ```python
@@ -446,30 +460,34 @@ print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
 #     psi = np.dot(circuit,psi0)
 #     return np.real(np.dot(psi.conj().T,np.dot(Hmol,psi)))[0,0]
 # ```
-#
+
+# %% [markdown]
 # Simply dotting in `Hmol` with the wave function will not work, because physically we don't have a measuring apparatus for "energy". We can, however, measure the state of each qubit by measuring the spin ($\hat{\mathrm{S}}_z$) of each qubit. We need to reduce the Hamiltonian's expected value into these types of "easy" projective measurements that can be done in the computational basis. These are sums of Pauli measurements.
-#
+
+# %% [markdown]
 # Now in some respects, we are already halfway there. For a normalized wave function $|\psi'\rangle$:
 #
 # $$E = \langle \psi'|\hat{H}_\mathrm{mol}|\psi'\rangle$$
-#
-# and using the definition of our H$_2$ Hamiltonian in the computational basis we have:
-#
+
+# %% [markdown]
+# Using the definition of our H$_2$ Hamiltonian in the computational basis we have:
 # $$
 # \begin{align} E &= \langle \psi'|g_0 \mathbf{I} + g_1 Z_0 + g_2 Z_1 + g_3 Z_0Z_1 + g_4 Y_0Y_1 + g_5 X_0 X_1|\psi'\rangle \\
 # &= g_0\langle \mathbf{I} \rangle + g_1\langle Z_0 \rangle + g_2 \langle Z_1 \rangle + g_3 \langle Z_0Z_1 \rangle + g_4 \langle Y_0Y_1 \rangle + g_5\langle X_0 X_1 \rangle \\
 # &= \sum_i g_i \langle \hat{O}_i \rangle
 # \end{align}
 # $$
-#
-# meaning that, given our wave function in the computational basis, if we can compute the expected value of the (products of) Pauli operators, we can relate this to the expected value of the Hamiltonian through the sum given above. This is given in that figure:
-#
-# <img src="expectation.png" width="150">
-#
+
+# %% [markdown]
+# meaning that, given our wave function in the computational basis, if we can compute the expected value of the (products of) Pauli operators, we can relate this to the expected value of the Hamiltonian through the sum given above.
+
+# %% [markdown]
 # Let's go a step further, though. It would be even better if we could relate the above expression to a *single type* of Pauli measurement, that is, measuring the spin of just *one* qubit. Then we don't need to have multiple measurement apparatus.
-#
+
+# %% [markdown]
 # Thankfully, there is a way to do this. The trick is to apply an additional unitary transformation at the end of the circuit so that, by measuring the spin of the top qubit, we can obtain any Pauli measurement. In our case, that means relating each of the the $\langle \hat{O}_i\rangle$ quantities to the expected value of $\langle Z_1 \otimes \mathbf{I}\rangle$ by some appropriate unitary operator. This is what is meant by the R$_t$ gates in this part of the figure. The R$_t$ are the unitaries we are talking about. 
-#
+
+# %% [markdown]
 # <img src="measurement.png" width="150">
 #
 # The little measuring gauge means we finally apply the measurement. Because we apply a particular form of the unitaries, we only need to measure the state of qubit-1 like we talked about above, but that's not necessarily the only way to go about it.

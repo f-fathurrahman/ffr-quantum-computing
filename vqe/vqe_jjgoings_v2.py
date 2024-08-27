@@ -2,51 +2,92 @@ import numpy as np
 from scipy.linalg import block_diag
 from scipy.optimize import minimize
 
-np.set_printoptions(precision=4,suppress=True)
+#np.set_printoptions(precision=4,suppress=True)
 
 # Pauli matrices
-I  = np.array([[ 1, 0],
-               [ 0, 1]])
-Sx = np.array([[ 0, 1],
-               [ 1, 0]])
-Sy = np.array([[ 0,-1j],
-               [1j, 0]])
-Sz = np.array([[ 1, 0],
-               [ 0,-1]])
+I  = np.array([
+    [ 1, 0],
+    [ 0, 1]
+])
+
+Sx = np.array([
+    [ 0, 1],
+    [ 1, 0]])
+Sy = np.array([
+    [ 0,-1j],
+    [1j, 0]
+])
+Sz = np.array([
+    [ 1, 0],
+    [ 0,-1]
+])
 
 # Hadamard matrix
-H = (1/np.sqrt(2))*np.array([[ 1, 1],
-                             [ 1,-1]])
+H = (1/np.sqrt(2))*np.array([
+    [ 1, 1],
+    [ 1,-1]
+])
 
 # Phase matrix
-S = np.array([[ 1, 0],
-              [ 0,1j]])
+S = np.array([
+    [ 1, 0],
+    [ 0,1j]
+])
 
 # single qubit basis states |0> and |1>
-q0 = np.array([[1],
-               [0]])
-q1 = np.array([[0],
-               [1]])
+q0 = np.array([
+    [1],
+    [0]
+])
+q1 = np.array([
+    [0],
+    [1]
+])
 
 # Projection matrices |0><0| and |1><1|
-P0  = np.dot(q0,q0.conj().T)
-P1  = np.dot(q1,q1.conj().T)
+P0  = np.dot(q0, q0.conj().T)
+P1  = np.dot(q1, q1.conj().T)
+
 
 
 # Rotation matrices as a function of theta, e.g. Rx(theta), etc.
-Rx = lambda theta : np.array([[    np.cos(theta/2),-1j*np.sin(theta/2)],
-                              [-1j*np.sin(theta/2),    np.cos(theta/2)]])
-Ry = lambda theta : np.array([[    np.cos(theta/2),   -np.sin(theta/2)],
-                              [    np.sin(theta/2),    np.cos(theta/2)]])
-Rz = lambda theta : np.array([[np.exp(-1j*theta/2),                0.0],
-                              [                0.0, np.exp(1j*theta/2)]])
+def Rx(θ):
+    return np.array([
+        [    np.cos(θ/2),-1j*np.sin(θ/2)],
+        [-1j*np.sin(θ/2),    np.cos(θ/2)]
+    ])
+
+def Ry(θ):
+    return np.array([
+        [    np.cos(θ/2),   -np.sin(θ/2)],
+        [    np.sin(θ/2),    np.cos(θ/2)]
+    ])
+
+def Rz(θ):
+    return np.array([
+        [np.exp(-1j*θ/2),            0.0],
+        [            0.0, np.exp(1j*θ/2)]
+    ])
+
+
+# TODO: verify operations of these
 
 # CNOTij, where i is control qubit and j is target qubit
-CNOT10 = np.kron(P0,I) + np.kron(P1,Sx) # control -> q1, target -> q0
-CNOT01 = np.kron(I,P0) + np.kron(Sx,P1) # control -> q0, target -> q1
 
-SWAP   = block_diag(1,Sx,1)
+# control -> q1, target -> q0
+CNOT_10 = np.kron(P0, I) + np.kron(P1, Sx) 
 
+# control -> q0, target -> q1  (Sx is in the q1 position)
+CNOT_01 = np.kron(I, P0) + np.kron(Sx, P1)
+
+SWAP   = block_diag(1, Sx, 1)
+
+
+# State |00>
+psi0 = np.kron(q0, q0)
+
+
+"""
 # See DOI: 10.1103/PhysRevX.6.031007
 # Here, we use parameters given for H2 at R=0.75A
 g0 = -0.4804
@@ -105,7 +146,7 @@ def projective_expected(theta, ansatz, psi0):
     circuit = ansatz(theta[0])
     psi = np.dot(circuit, psi0)
     
-    # for 2 qubits, assume we can only take Pauli Sz measurements (Sz \otimes I)
+    # for 2 qubits, assume we can only take Pauli Sz measurements (Sz ⊗ I)
     # we just apply the right unitary for the desired Pauli measurement
     measureZ = lambda U: np.dot(np.conj(U).T,np.dot(np.kron(Sz,I),U))
     
@@ -151,4 +192,4 @@ assert np.allclose(val + nuclear_repulsion,-1.1456295)
 print("VQE: ")
 print("  [+] theta:  {:+2.8} deg".format(theta))
 print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
-
+"""

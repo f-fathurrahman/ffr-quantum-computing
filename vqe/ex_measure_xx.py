@@ -15,13 +15,14 @@ qc.h([0, 1])
 #qc.x(1)
 qc.barrier()
 # Now the circuit to measure
-qc.cx(0, 1)
+qc.h(0)
+qc.h(1)
+qc.cx(0,1)
 qc.measure(1, 0) # q1 -> c0
 
 import matplotlib.pyplot as plt
 qc.draw("mpl")
-plt.savefig("IMG_measure_ZZ.png", dpi=150)
+plt.savefig("IMG_measure_XX.png", dpi=150)
 
 res = run_on_qasm_simulator(qc)
 print(res.get_counts())
-

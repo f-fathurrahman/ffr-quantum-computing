@@ -83,11 +83,6 @@ CNOT_01 = np.kron(I, P0) + np.kron(Sx, P1)
 SWAP   = block_diag(1, Sx, 1)
 
 
-# State |00>
-psi0 = np.kron(q0, q0)
-
-
-"""
 # See DOI: 10.1103/PhysRevX.6.031007
 # Here, we use parameters given for H2 at R=0.75A
 g0 = -0.4804
@@ -97,25 +92,63 @@ g3 = +0.5716
 g4 = +0.0910
 g5 = +0.0910
 
-nuclear_repulsion = 0.7055696146
+nuclear_repulsion = 0.7055696146 # at R=0.75A
 
-Hmol = (g0 * np.kron( I, I) + # g0 * I
-        g1 * np.kron( I,Sz) + # g1 * Z0
+# Build Hamiltonian matrix
+Hmol = (g0 * np.kron(I , I) + # g0 * I
+        g1 * np.kron(I , Sz) + # g1 * Z0
         g2 * np.kron(Sz, I) + # g2 * Z1
-        g3 * np.kron(Sz,Sz) + # g3 * Z0Z1
-        g4 * np.kron(Sy,Sy) + # g4 * Y0Y1
-        g5 * np.kron(Sx,Sx))  # g5 * X0X1
+        g3 * np.kron(Sz, Sz) + # g3 * Z0Z1
+        g4 * np.kron(Sy, Sy) + # g4 * Y0Y1
+        g5 * np.kron(Sx, Sx))  # g5 * X0X1
 
 electronic_energy = np.linalg.eigvalsh(Hmol)[0] # take the lowest value
 print("Classical diagonalization: {:+2.8} Eh".format(electronic_energy + nuclear_repulsion))
 print("Exact (from G16):          {:+2.8} Eh".format(-1.1457416808))
 
 # initial basis, put in |01> state with Sx operator on q0
-psi0 = np.zeros((4,1))
-psi0[0] = 1
-psi0 = np.dot(np.kron(I,Sx),psi0)
+#psi0 = np.zeros((4,1))
+#psi0[0] = 1
+#psi0 = np.kron(I,Sx) @ psi0 # apply the X operator to q0
+
+# Alternative
+ket0 = np.array([[1], [0]])
+ket1 = np.array([[0], [1]])
+psi0 = np.kron(q0, q1) # State |01>
 
 
+theta  = [0.0]
+# The UCC ansatz in exponential form
+from scipy.linalg import expm
+def ansatz_UCC(theta):
+    return expm(-1j*np.array([theta])*np.kron(Sy,Sx))
+
+
+# For a given ansatz with parameter theta, compute the expectation value
+# We will minimize this function, the first arg will be varied during optimization
+# via scipy.optimize.minimize
+# The rest of args are not varied.
+def expected(theta, ansatz, Hmol, psi0):
+    circuit = ansatz(theta[0]) # the quantum circuit
+    psi = circuit @ psi0 # apply the circuit operation to psi0
+    Hpsi = Hmol @ psi
+    psiHpsi = psi.conj().T @ Hpsi # psi is a (4x1) "matrix"
+    return np.real(psiHpsi[0,0]) # because psiHpsi is (1x1) "matrix"
+
+from scipy.optimize import minimize
+theta  = [0.0]
+result = minimize(expected, theta, args=(ansatz_UCC, Hmol, psi0), options={'disp': True})
+theta  = result.x[0]
+val    = result.fun
+
+print("VQE with UCC, using expm ")
+print("theta:  {:+2.8} rad".format(theta))
+print("energy: {:+2.8} Hartree".format(val + nuclear_repulsion))
+    
+
+
+
+"""
 # read right-to-left (bottom-to-top?)
 ansatz = lambda theta: (
     np.dot(
@@ -124,13 +157,13 @@ ansatz = lambda theta: (
                 -Ry(np.pi/2),
                 Rx(np.pi/2)
             ),
-            np.dot(CNOT10,
+            np.dot(CNOT_10,
                 np.dot(
                     np.kron(
                         I,
                         Rz(theta)
                     ),
-                    CNOT10
+                    CNOT_10
                 )
             )
         ),

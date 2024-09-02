@@ -16,13 +16,19 @@
 # %%
 import numpy as np
 
-# %% [markdown]
-# # Introduction to Variational Quantum Algorithm
+# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# # Introduction to Variational Quantum Eigensolver
 
 # %% [markdown]
-# In this tutorial we will learn an introduction to variational quantum algorithm for calculation of eigevalues of a Hamiltonan or Hermitian matrix.
+# In this tutorial we will learn an introduction to variational quantum eigensolver for calculation of lowest eigenvalue of a Hamiltonan or Hermitian matrix.
 
 # %% [markdown]
+# In VQE, a quantum computer and a classical computer work together to calculate the ground state energy of a molecule.
+
+# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# # Let's review some stuffs first
+
+# %% [markdown] jp-MarkdownHeadingCollapsed=true
 # ## What is Hermitian matrix ?
 
 # %% [markdown]
@@ -100,10 +106,34 @@ A @ x0
 np.dot(x0, x0)
 
 # %% [markdown]
-# ## Qiskit: test SparsePauliOp
+# ## Optimization
+
+# %% [markdown]
+# Optimizing a scalar function
+
+# %%
+
+# %% [markdown]
+# # Qiskit
+
+# %% [markdown]
+# There are several things that we need to prepare before executing a VQE calculation.
+#
+# - The Hamiltonian matrix needs to be represented as tensor products of Pauli
+# - Parameterized ansatz (recipe) for quantum circuit
+# - minization algorithm
+
+# %% [markdown]
+# To create Pauli representation of a matrix, we can use `SparsePauliOp` class from Qiskit.
 
 # %%
 from qiskit.quantum_info.operators import SparsePauliOp
+
+# %%
+np.random.seed(1234)
+A = np.random.rand(4,4) + 10*np.eye(4) # create a digonally dominant matrix
+A = 0.5*(A + A.T)
+A
 
 # %%
 pauli_op = SparsePauliOp.from_operator(A)
@@ -111,13 +141,11 @@ pauli_op = SparsePauliOp.from_operator(A)
 # %%
 pauli_op
 
-# %%
-A
+# %% [markdown]
+# ## Checking Pauli representation
 
 # %%
 pauli_op_list = pauli_op.to_list()
-
-# %%
 pauli_op_list
 
 # %%
@@ -159,6 +187,12 @@ for p in pauli_op_list:
 np.real(matA)
 
 # %% [markdown]
+# Original matrix:
+
+# %%
+A
+
+# %% [markdown]
 # ## Qiskit: built in algorithm
 
 # %%
@@ -167,11 +201,16 @@ print(f"Reference value: {ref_value:.5f}")
 
 # %%
 # define ansatz and optimizer
-from qiskit.circuit.library import TwoLocal
+from qiskit.circuit.library import EfficientSU2
 from qiskit_algorithms.optimizers import SPSA
 
+# %%
+import qiskit.circuit.library
+import qiskit_algorithms.optimizers
+
+# %%
 iterations = 125
-ansatz = TwoLocal(rotation_blocks="ry", entanglement_blocks="cz")
+ansatz = EfficientSU2(pauli_op.num_qubits)
 spsa = SPSA(maxiter=iterations)
 
 # %%
@@ -190,13 +229,11 @@ seed = 1234
 algorithm_globals.random_seed = seed
 
 # %%
-2**12
-
-# %%
+Nshots = 2**10
 # define Aer Estimator for noiseless statevector simulation
 from qiskit_aer.primitives import Estimator as AerEstimator
 noiseless_estimator = AerEstimator(
-    run_options={"seed": seed, "shots": 2**12},
+    run_options={"seed": seed, "shots": Nshots},
     transpile_options={"seed_transpiler": seed},
 )
 
@@ -214,9 +251,12 @@ print(f"VQE on Aer qasm simulator (no noise): {result.eigenvalue.real:.5f}")
 print(f"Delta from reference energy value is {(result.eigenvalue.real - ref_value):.5f}")
 
 # %%
-result = vqe.compute_minimum_eigenvalue(operator=pauli_op)
+import matplotlib.pyplot as plt
 
-print(f"VQE on Aer qasm simulator (no noise): {result.eigenvalue.real:.5f}")
-print(f"Delta from reference energy value is {(result.eigenvalue.real - ref_value):.5f}")
+# %%
+plt.style.use("dark_background")
+
+# %%
+plt.plot(counts, values);
 
 # %%

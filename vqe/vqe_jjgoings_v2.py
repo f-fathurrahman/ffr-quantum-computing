@@ -47,7 +47,7 @@ q1 = np.array([
 # Projection matrices |0><0| and |1><1|
 P0  = np.dot(q0, q0.conj().T)
 P1  = np.dot(q1, q1.conj().T)
-
+# These are used in building CNOT gate
 
 
 # Rotation matrices as a function of theta, e.g. Rx(theta), etc.
@@ -92,7 +92,7 @@ g3 = +0.5716
 g4 = +0.0910
 g5 = +0.0910
 
-nuclear_repulsion = 0.7055696146 # at R=0.75A
+E_nn = 0.7055696146 # at R=0.75A
 
 # Build Hamiltonian matrix
 Hmol = (g0 * np.kron(I , I) + # g0 * I
@@ -103,7 +103,7 @@ Hmol = (g0 * np.kron(I , I) + # g0 * I
         g5 * np.kron(Sx, Sx))  # g5 * X0X1
 
 electronic_energy = np.linalg.eigvalsh(Hmol)[0] # take the lowest value
-print("Classical diagonalization: {:+2.8} Eh".format(electronic_energy + nuclear_repulsion))
+print("Classical diagonalization: {:+2.8} Eh".format(electronic_energy + E_nn))
 print("Exact (from G16):          {:+2.8} Eh".format(-1.1457416808))
 
 # initial basis, put in |01> state with Sx operator on q0
@@ -120,7 +120,7 @@ psi0 = np.kron(q0, q1) # State |01>
 theta  = [0.0]
 # The UCC ansatz in exponential form
 from scipy.linalg import expm
-def ansatz_UCC(theta):
+def ansatz_UCC_expm(theta):
     return expm(-1j*np.array([theta])*np.kron(Sy,Sx))
 
 
@@ -130,50 +130,61 @@ def ansatz_UCC(theta):
 # The rest of args are not varied.
 def expected(theta, ansatz, Hmol, psi0):
     circuit = ansatz(theta[0]) # the quantum circuit
-    psi = circuit @ psi0 # apply the circuit operation to psi0
+    # apply the circuit operation to psi0
+    # This will evolve psi0 -> psi
+    psi = circuit @ psi0 
+    # now compute the expectation with respect to Hmol operator
     Hpsi = Hmol @ psi
     psiHpsi = psi.conj().T @ Hpsi # psi is a (4x1) "matrix"
     return np.real(psiHpsi[0,0]) # because psiHpsi is (1x1) "matrix"
+# XXX This only only works with expm ansatz
+
 
 from scipy.optimize import minimize
 theta  = [0.0]
-result = minimize(expected, theta, args=(ansatz_UCC, Hmol, psi0), options={'disp': True})
+result = minimize(expected, theta, args=(ansatz_UCC_expm, Hmol, psi0), options={'disp': True})
 theta  = result.x[0]
-val    = result.fun
+E_tot = result.fun + E_nn
 
+print()
 print("VQE with UCC, using expm ")
 print("theta:  {:+2.8} rad".format(theta))
-print("energy: {:+2.8} Hartree".format(val + nuclear_repulsion))
+print("energy: {:+2.8} Hartree".format(E_tot))
+
+
+# read right-to-left (bottom-to-top?)
+# ansatz in terms of gate operations
+def ansatz_UCC_v1(theta):
+    # remember that we use |q1 q0>
+    gate5 = np.kron(-Ry(np.pi/2), Rx(np.pi/2))
+    gate4 = CNOT_10   # control -> q1, target -> q0
+    gate3 = np.kron(I, Rz(theta))
+    gate2 = CNOT_10
+    gate1 = np.kron(Ry(np.pi/2), -Rx(np.pi/2))
+    return gate1 @ gate2 @ gate3 @ gate4 @ gate5
+
+def ansatz_UCC_v2(theta):
+    # remember that we use |q1 q0>
+    gate5 = np.kron(-Ry(np.pi/2), Rx(np.pi/2))
+    gate4 = CNOT_10   # control -> q1, target -> q0
+    gate3 = np.kron(I, Rz(theta))
+    gate2 = CNOT_10
+    gate1 = np.kron(Ry(np.pi/2), -Rx(np.pi/2))
+    return gate5 @ gate4 @ gate3 @ gate2 @ gate1 # psi
+
+
+
+def ansatz_UCC_orig(theta):
+    return ( np.dot(np.dot(np.kron(-Ry(np.pi/2), Rx(np.pi/2)),
+             np.dot(CNOT_10, 
+                np.dot(np.kron(I,Rz(theta)),
+                CNOT_10))),
+                np.kron(Ry(np.pi/2),-Rx(np.pi/2)))
+           )
     
 
-
-
-"""
-# read right-to-left (bottom-to-top?)
-ansatz = lambda theta: (
-    np.dot(
-        np.dot(
-            np.kron(
-                -Ry(np.pi/2),
-                Rx(np.pi/2)
-            ),
-            np.dot(CNOT_10,
-                np.dot(
-                    np.kron(
-                        I,
-                        Rz(theta)
-                    ),
-                    CNOT_10
-                )
-            )
-        ),
-        np.kron(
-            Ry(np.pi/2),
-            -Rx(np.pi/2)
-        )
-    )
-)
-
+# XXX this function need access to some global variables
+# XXX make Pauli strings as input argument
 def projective_expected(theta, ansatz, psi0):
     # this will depend on the hard-coded Hamiltonian + coefficients
     circuit = ansatz(theta[0])
@@ -181,7 +192,7 @@ def projective_expected(theta, ansatz, psi0):
     
     # for 2 qubits, assume we can only take Pauli Sz measurements (Sz ⊗ I)
     # we just apply the right unitary for the desired Pauli measurement
-    measureZ = lambda U: np.dot(np.conj(U).T,np.dot(np.kron(Sz,I),U))
+    measureZ = lambda U: np.dot(np.conj(U).T, np.dot(np.kron(Sz,I),U))
     
     energy = 0.0
     
@@ -201,28 +212,29 @@ def projective_expected(theta, ansatz, psi0):
     energy += g2*np.dot(psi.conj().T,np.dot(measureZ(U),psi))
 
     # <Sz1 Sz0>
-    U = CNOT01
+    U = CNOT_01
     energy += g3*np.dot(psi.conj().T,np.dot(measureZ(U),psi))
 
     # <Sx1 Sx0>
-    U = np.dot(CNOT01,np.kron(H,H))
+    U = np.dot(CNOT_01,np.kron(H,H))
     energy += g4*np.dot(psi.conj().T,np.dot(measureZ(U),psi))
 
     # <Sy1 Sy0>
-    U = np.dot(CNOT01,np.kron(np.dot(H,S.conj().T),np.dot(H,S.conj().T)))
+    U = np.dot(CNOT_01,np.kron(np.dot(H,S.conj().T),np.dot(H,S.conj().T)))
     energy += g5*np.dot(psi.conj().T,np.dot(measureZ(U),psi))
 
     return np.real(energy)[0,0]
 
-theta  = [0.0]
-result = minimize(projective_expected,theta,args=(ansatz,psi0))
+
+theta  = [0.0] # we are using `minimize` for vector
+result = minimize(projective_expected, theta, args=(ansatz_UCC_orig, psi0))
 theta  = result.x[0]
-val    = result.fun
+E_tot = result.fun + E_nn
 
 # check it works...
-assert np.allclose(val + nuclear_repulsion,-1.1456295)
+assert np.allclose(E_tot, -1.1456295)
 
-print("VQE: ")
-print("  [+] theta:  {:+2.8} deg".format(theta))
-print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
-"""
+print()
+print("VQE with quantum circuit: ")
+print(" theta:  {:+2.8} deg".format(theta))
+print(" energy: {:+2.8} Hartree".format(E_tot))

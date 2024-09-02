@@ -20,8 +20,8 @@ from qiskit.circuit.library import TwoLocal, EfficientSU2
 from qiskit_algorithms.optimizers import SPSA
 
 iterations = 125
-#ansatz = TwoLocal(rotation_blocks="ry", entanglement_blocks="cz")
-ansatz = EfficientSU2(A_op.num_qubits)
+ansatz = TwoLocal(rotation_blocks="ry", entanglement_blocks="cz")
+#ansatz = EfficientSU2(A_op.num_qubits)
 spsa = SPSA(maxiter=iterations)
 print("Number of parameters for ansatz = ", ansatz.num_parameters)
 

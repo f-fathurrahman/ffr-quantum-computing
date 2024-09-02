@@ -5,12 +5,15 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.1
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
+
+# %% [markdown]
+# ## Quantum Gates
 
 # %% [markdown]
 # $$
@@ -140,6 +143,9 @@ S = np.array([
     [ 0,1j]
 ])
 
+# %% [markdown]
+# ## Qubit definition
+
 # %%
 # single qubit basis states |0> and |1>
 q0 = np.array([
@@ -157,6 +163,9 @@ q1 = np.array([
 P0  = np.dot(q0, q0.conj().T)
 P1  = np.dot(q1, q1.conj().T)
 
+
+# %% [markdown]
+# ## Rotation matrices
 
 # %%
 # Rotation matrices as a function of theta, e.g. Rx(theta), etc.
@@ -178,6 +187,9 @@ def Rz(theta):
         [         0.0, np.exp(1j*theta/2)]
     ])
 
+
+# %% [markdown]
+# ## Multiple qubits
 
 # %% [markdown]
 # $$
@@ -226,6 +238,9 @@ def Rz(theta):
 # \end{pmatrix}, \mathrm{~etc.}
 # \end{align}
 # $$
+
+# %% [markdown]
+# ## CNOT Gates
 
 # %% [markdown]
 # $$
@@ -285,6 +300,9 @@ CNOT01 = np.kron(I,P0) + np.kron(Sx,P1) # control -> q0, target -> q1
 SWAP   = block_diag(1,Sx,1)
 
 # %% [markdown]
+# ## Hamiltonian in terms of gates
+
+# %% [markdown]
 # $$
 # \hat{H}_{\mathrm{BK}} = g_0 \mathbf{I} + g_1 Z_0 + g_2 Z_1 + g_3 Z_0Z_1 + g_4 Y_0Y_1 + g_5 X_0 X_1
 # $$
@@ -328,10 +346,11 @@ print("Exact (from G16):          {:+2.8} Eh".format(-1.1457416808))
 
 # %% [markdown]
 # Considering that the Hamiltonian elements had a precision of 1E-04, this is very good agreement. However, this approach utilizes a classical algorithm to obtain the eigenvalues. We want to see if we can obtain the eigenvalues using a quantum circuit.
-#
-#
-# ### A first attempt at a quantum circuit
-#
+
+# %% [markdown]
+# ## A first attempt at a quantum circuit
+
+# %% [markdown]
 # The usual input for quantum algorithms is to start in the $|00\cdots\rangle$ state. This is represented by a zero vector, with the first element set to 1. Because our Hamiltonian for H$_2$ only requires two qubits, we will start with the state $|01\rangle$. To obtain this from $|00\rangle$, we just need to act on the zeroth qubit with the Pauli X operator. This is the first step in the quantum circuit in the figure I showed above from the O'Malley paper. (They apply X$_{\pi}$ -- same thing.)
 
 # %%
@@ -446,7 +465,7 @@ print("  [+] energy: {:+2.8} Eh".format(val + nuclear_repulsion))
 # An analogy: similar to classical computation, you might want a string, or float, or whatever as the "true" output of your function, but for the computer to compute it for you -- it needs to ultimately be in binary. Same thing for the quantum computer. Our function should ultimately return the energy, but it needs to process this in terms of quantum bits. 
 
 # %% [markdown]
-# ### A "real" measurement of the energy
+# ## A "real" measurement of the energy
 
 # %% [markdown]
 # All that is to say that we were cheating again. Experimentally, the "only" measurements we can make are those which probe the final quantum state of the qubits. What we need a way to connect measurements of qubits to an expression for the expectation value of the molecular electronic Hamiltonian.

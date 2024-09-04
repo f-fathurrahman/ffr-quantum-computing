@@ -153,7 +153,7 @@ from qiskit.visualization import plot_bloch_multivector
 # %%
 plot_bloch_multivector(psi_v)
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Computational basis vector
 
 # %% [markdown]
@@ -214,7 +214,7 @@ c0*ket0 + c1*ket1
 # %%
 psi
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Other bases
 
 # %% [markdown]
@@ -361,7 +361,7 @@ ket001
 ket100 = np.kron( np.kron(ket1, ket0), ket0)
 ket100
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Operator, quantum gate
 
 # %% [markdown]
@@ -375,7 +375,7 @@ ket100
 
 # %% [markdown]
 # We usually represent an operator as a matrix. Dimension of the matrix depends on the dimension of the statevector it operates on. For example, if an operator or quantum gate operate only on one qubit, then the dimension of the matrix is $2 \times 2$.
-# For it is two qubits then the matrix dimension is $4 \times 4$, etc.
+# For two qubits then the matrix dimension is $4 \times 4$, etc.
 
 # %% [markdown]
 # Suppose that we have two qubits with statevector
@@ -479,19 +479,11 @@ ket100
 # \end{bmatrix}
 # $$
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
-# ### Phase matrix
+# %% [markdown]
+# ### Rotation matrices
 
 # %% [markdown]
-# $$
-# {S} = \begin{bmatrix} 
-# 1 & 0 \\
-# 0 & i 
-# \end{bmatrix}
-# $$
-
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
-# ### Rotation matrices
+# These matrices have by one parameter $\theta$.
 
 # %% [markdown]
 # $$
@@ -516,46 +508,199 @@ ket100
 # %% [markdown]
 # ### Qiskit quantum gates
 
+# %% [markdown]
+# We can code these matrices manually using Numpy. Alternatively, we can use Qiskit circuit library to obtain matrix representations of of quantum gates.
+
 # %%
 import qiskit.circuit.library as qclib
 
 # %%
-qclib.IGate().to_matrix()
+I = qclib.IGate().to_matrix()
 
 # %%
-qclib.RXGate(0.1).to_matrix()
+X = qclib.XGate().to_matrix()
+Y = qclib.YGate().to_matrix()
+Z = qclib.ZGate().to_matrix()
 
 # %%
-qclib.CXGate().to_matrix()
+H = qclib.HGate().to_matrix()
 
 # %%
-# ?qclib.CXGate
+RX = qclib.RXGate(0.1).to_matrix() # chose theta=0.1
+
+# %% [markdown]
+# ### Your tasks
+
+# %% [markdown]
+# #### Verify that these matrices are unitary.
+
+# %% [markdown]
+# #### Try to apply these matrices basis set, for example try to apply $X$ to $\ket{0}$ and $\ket{1}$ and visualize the results.
+
+# %% [markdown]
+# #### Compute expectation values of various basis set vector for Pauli matrices.
+
+# %%
+psi = ket0;
+res = psi.conj().T @ (Z @ psi)
+res
+
+# %%
+psi = ketMinus;
+res = psi.conj().T @ (X @ psi)
+res
+
+# %%
+psi = ketPlusI
+res = psi.conj().T @ (Z @ psi)
+res
 
 # %% [markdown]
 # ## Quantum circuit
 
+# %% [markdown]
+# In Qiskit, we don't usually work with matrix representation of quantum gates. Instead we build a quantum circuit and add the required gates or operations.
+
 # %%
 from qiskit import QuantumCircuit
 
+# %% [markdown]
+# In the following example, we build a QuantumCircuit with 2 qubits $\ket{q_1 q_0}$, apply Hadamard gate to $q_1$ and Pauli $X$ gate the $q_0$, the we measure the results. We also draw the corresponding circuit.
+
 # %%
 qc = QuantumCircuit(2)
-qc.h(1)
+qc.h(1) # Hadamard gate to q1
+qc.x(0) # Hdamard gate to q0
+qc.measure_all()
+qc.draw()
+
+# %% [markdown]
+# Using Matplotlib
+
+# %%
+qc.draw("mpl")
+
+# %% [markdown]
+# ### Quantum circuit simulation
+
+# %% [markdown]
+# In Qiskit, we can simulate the operations of the quantum circuit on classical computers. We usually use two kind of simulators:
+# - Statevector simulator: this is similar to using raw matrix multiplications
+# - QASM simulator: this is a probabilistic simulator, to simulate real measurement. We usually use this for quantum circuits which have measurement gates.
+
+# %%
+from qiskit import transpile
+from qiskit_aer import Aer
+
+def run_on_qasm_simulator(my_qc, shots=1000):
+    backend = Aer.get_backend("qasm_simulator")
+    tqc = transpile(my_qc, backend)
+    job = backend.run(tqc, shots=shots)
+    return job.result()
+
+def run_on_statevector_simulator(my_qc):
+    backend = Aer.get_backend("statevector_simulator")
+    tqc = transpile(my_qc, backend)
+    job = backend.run(tqc)
+    return job.result()
+
+
+# %% [markdown]
+# ### Example simulations
+
+# %%
+qc = QuantumCircuit(1)
+qc.h(0)
+qc.draw()
+
+# %%
+res = run_on_statevector_simulator(qc)
+res.get_statevector()
+
+# %%
+res.get_statevector().data.real
+
+# %%
+1/np.sqrt(2) * (ket0 + ket1)
+
+# %%
+qc = QuantumCircuit(1)
 qc.h(0)
 qc.measure_all()
 qc.draw()
 
 # %%
-qc.draw("mpl")
+res = run_on_qasm_simulator(qc)
+res.get_counts()
+
+# %% [markdown]
+# What happen if we run statevector simulator on this quantum circuit?
 
 # %%
-qc = QuantumCircuit(3)
-qc.cx(0,1)
-qc.barrier()
-qc.x(2)
-qc.draw("mpl")
+res = run_on_statevector_simulator(qc)
+res.get_statevector()
+
+# %% [markdown]
+# ### Multiple qubits quantum gates
+
+# %% [markdown]
+# We can build quantum gates that operates on multiple qubits by using tensor products of single qubit quantum gates.
+
+# %% [markdown]
+# Usually multiple qubit quantum gates are controlled gates.
+# Controlled gates need more than one qubits to operate.
+# They are somewhat equivalent to conditional statements in the classical programming languages. The examples are controlled X gate (CX), controlled-Y gate (CY), etc.
+# CX gate need two qubits: first qubit is the control qubit, second qubit is the target qubit.
+
+# %%
+qc = QuantumCircuit(2)
+qc.x(0)
+qc.cx(0,1) # q0 is the control, q1 is target
+qc.measure_all()
+qc.draw()
+
+# %%
+res = run_on_qasm_simulator(qc)
+res.get_counts()
+
+# %% [markdown]
+# ### Parametrized quantum circuit
+
+# %% [markdown]
+# Some gates need parameter(s), such as RX gate.
+
+# %%
+qc = QuantumCircuit(1)
+qc.rx(0.1, 0) # 0.1 is theta
+qc.draw()
+
+# %%
+from qiskit.circuit import ParameterVector
+
+# %%
+theta = ParameterVector("theta", 1)
+
+# %%
+qc = QuantumCircuit(1)
+qc.rx(theta[0], 0)
+qc.draw()
+
+# %%
+# res = run_on_statevector_simulator(qc) # this will error
+
+# %%
+tqc = qc.assign_parameters([pi])
+res = run_on_statevector_simulator(tqc)
+res.get_statevector()
+
+# %%
+from qiskit.visualization import plot_bloch_multivector
+plot_bloch_multivector(res.get_statevector())
 
 # %% [markdown]
 # ## Last cell
+
+# %%
 
 # %% [markdown]
 # ## 

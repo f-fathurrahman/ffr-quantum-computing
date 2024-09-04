@@ -91,8 +91,12 @@ g2 = -0.4347
 g3 = +0.5716
 g4 = +0.0910
 g5 = +0.0910
+# Units is Ha
 
-E_nn = 0.7055696146 # at R=0.75A
+BOHR_TO_ANG = 0.5291772105638411
+ANG_TO_BOHR = 1/BOHR_TO_ANG
+
+E_nn = 1/(0.75*ANG_TO_BOHR) # at R=0.75A
 
 # Build Hamiltonian matrix
 Hmol = (g0 * np.kron(I , I) + # g0 * I
@@ -103,8 +107,8 @@ Hmol = (g0 * np.kron(I , I) + # g0 * I
         g5 * np.kron(Sx, Sx))  # g5 * X0X1
 
 electronic_energy = np.linalg.eigvalsh(Hmol)[0] # take the lowest value
-print("Classical diagonalization: {:+2.8} Eh".format(electronic_energy + E_nn))
-print("Exact (from G16):          {:+2.8} Eh".format(-1.1457416808))
+print("Classical diagonalization: {:+2.8} Ha".format(electronic_energy + E_nn))
+print("Exact (from G16):          {:+2.8} Ha".format(-1.1457416808))
 
 # initial basis, put in |01> state with Sx operator on q0
 #psi0 = np.zeros((4,1))

@@ -16,7 +16,7 @@
 # %%
 import numpy as np
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # # Introduction to Variational Quantum Eigensolver
 
 # %% [markdown]

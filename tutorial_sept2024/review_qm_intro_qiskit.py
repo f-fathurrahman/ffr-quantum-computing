@@ -28,7 +28,7 @@ matplotlib_inline.backend_inline.set_matplotlib_formats("svg")
 # %%
 from math import pi
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Statevector
 
 # %% [markdown]
@@ -85,6 +85,9 @@ c = np.sqrt( psi.conj().T @ psi ) # c is actually a 1x1 matrix
 psi *= (1/c)
 
 # %%
+psi
+
+# %%
 psi.conj().T @ psi
 
 # %% [markdown]
@@ -127,10 +130,13 @@ def qubit_to_spherical(psi):
 
 
 # %%
-qubit_to_spherical(np.array([0.0, 1.0]))
+θ, ϕ = qubit_to_spherical(psi)
 
 # %%
-plot_bloch_vector([1,pi/3,0.1], coord_type="spherical")
+plot_bloch_vector([1,θ,ϕ], coord_type="spherical")
+
+# %%
+plot_bloch_vector([1,pi/3,pi/3], coord_type="spherical")
 
 # %% [markdown]
 # ### Using Statevector
@@ -145,6 +151,9 @@ from qiskit.quantum_info.states import Statevector
 psi_v = Statevector(psi)
 
 # %%
+psi
+
+# %%
 psi_v
 
 # %%
@@ -152,6 +161,17 @@ from qiskit.visualization import plot_bloch_multivector
 
 # %%
 plot_bloch_multivector(psi_v)
+
+# %%
+θ, ϕ = qubit_to_spherical(np.array([0.0, 1.0]))
+θ, ϕ
+
+# %%
+plot_bloch_multivector(Statevector([0.0, 1.0]))
+
+# %%
+
+# %%
 
 # %% [markdown]
 # ## Computational basis vector
@@ -184,8 +204,18 @@ ket1 = np.array([ [0], [1] ])
 # %% [markdown]
 # `ket0` and `ket1` should be orthonormal: 
 
+# %% [markdown]
+# $$
+# \braket{0|0}:
+# $$
+
 # %%
 ket0.conj().T @ ket0
+
+# %% [markdown]
+# $$
+# \braket{0|1}
+# $$
 
 # %%
 ket0.conj().T @ ket1
@@ -193,10 +223,18 @@ ket0.conj().T @ ket1
 # %% [markdown]
 # Using computational basis, we can write $\left| \psi \right\rangle$ linear combination of this basis set:
 # $$
-# \psi = c_0 \left| 0 \right\rangle + c_1 \left| 1 \right\rangle
+# \ket{\psi} = c_0 \ket{0} + c_1 \ket{1}
 # $$
 #
 # How do we find the coefficients $c_0$ and $c_1$ ?
+
+# %% [markdown]
+# $$
+# c_0 = \braket{0|\psi}
+# $$
+# $$
+# c_1 = \braket{1|\psi}
+# $$
 
 # %%
 c0 = ket0.conj().T @ psi
@@ -240,6 +278,11 @@ ketPlus.conj().T @ ketPlus
 # %%
 ketPlus.conj().T @ ketMinus
 
+# %%
+ketMinus.conj().T @ ketMinus
+
+# %%
+
 # %% [markdown]
 # $$
 # \left| +\imath \right\rangle = \begin{bmatrix}
@@ -263,7 +306,28 @@ ketPlusI.conj().T @ ketPlusI
 # %%
 ketPlusI.conj().T @ ketMinusI
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
+# ### Visualize these bases on Bloch sphere
+
+# %%
+plot_bloch_multivector( Statevector(ket0) ) 
+
+# %%
+plot_bloch_multivector( Statevector(ket1) )
+
+# %%
+plot_bloch_multivector( Statevector(ketPlus) )
+
+# %%
+plot_bloch_multivector( Statevector(ketMinus) )
+
+# %%
+plot_bloch_multivector( Statevector(ketPlusI) )
+
+# %%
+plot_bloch_multivector( Statevector(ketMinusI) )
+
+# %% [markdown]
 # ## Two qubits
 
 # %% [markdown]
@@ -322,10 +386,16 @@ ket10
 ket11 = np.kron(ket1, ket1)
 ket11
 
+# %%
+plot_bloch_multivector(Statevector(ket01)) 
+
 # %% [markdown]
 # ### Your task
 #
 # Check orthonormality of `ket00`, `ket01`, `ket10`, and `ket11`
+
+# %%
+ket01.conj().T @ ket01
 
 # %% [markdown]
 # ### Your task
@@ -333,7 +403,7 @@ ket11
 # Create a random complex (state)vector with 4 elements and normalize it.
 # Then compute the expansion coefficients $c_{00}$, $c_{01}$, etc. Verify that the expansion is the same as original vector.
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ## Three, four, ... qubits
 
 # %% [markdown]
@@ -438,7 +508,7 @@ ket100
 # %% [markdown]
 # ## One qubit quantum gates
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ### Identity
 
 # %% [markdown]
@@ -449,7 +519,7 @@ ket100
 # \end{bmatrix}
 # $$
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ### Pauli matrices
 
 # %% [markdown] jp-MarkdownHeadingCollapsed=true
@@ -468,7 +538,7 @@ ket100
 # \end{bmatrix}
 # $$
 
-# %% [markdown] jp-MarkdownHeadingCollapsed=true
+# %% [markdown]
 # ### Hadamard matrix
 
 # %% [markdown]
@@ -518,15 +588,23 @@ import qiskit.circuit.library as qclib
 I = qclib.IGate().to_matrix()
 
 # %%
+I
+
+# %%
 X = qclib.XGate().to_matrix()
 Y = qclib.YGate().to_matrix()
 Z = qclib.ZGate().to_matrix()
+
+# %%
+Z
 
 # %%
 H = qclib.HGate().to_matrix()
 
 # %%
 RX = qclib.RXGate(0.1).to_matrix() # chose theta=0.1
+RY = qclib.RYGate(0.1).to_matrix()
+RZ = qclib.RZGate(0.2).to_matrix()
 
 # %% [markdown]
 # ### Your tasks
@@ -534,16 +612,67 @@ RX = qclib.RXGate(0.1).to_matrix() # chose theta=0.1
 # %% [markdown]
 # #### Verify that these matrices are unitary.
 
+# %%
+RX @ RX.conj().T 
+
+# %%
+psi1 = RX @ ket0
+
+# %%
+psi1
+
+# %%
+np.linalg.norm(psi1)
+
+# %%
+X @ X.conj().T 
+
+# %%
+X.conj().T @ X
+
+# %%
+np.linalg.inv(X)
+
+# %%
+X
+
 # %% [markdown]
-# #### Try to apply these matrices basis set, for example try to apply $X$ to $\ket{0}$ and $\ket{1}$ and visualize the results.
+# #### Try to apply these matrices to basis vectors, for example try to apply $X$ to $\ket{0}$ and $\ket{1}$ and visualize the results.
+
+# %%
+plot_bloch_multivector(Statevector(ket0))
+
+# %%
+plot_bloch_multivector(Statevector(X @ ket0))
+
+# %%
+plot_bloch_multivector(Statevector(ket1))
+
+# %%
+plot_bloch_multivector(Statevector(ket1))
+
+# %%
+plot_bloch_multivector(Statevector(
+    qclib.RXGate(1.0).to_matrix() @ ketPlus)
+)
 
 # %% [markdown]
 # #### Compute expectation values of various basis set vector for Pauli matrices.
 
 # %%
 psi = ket0;
-res = psi.conj().T @ (Z @ psi)
+res = psi.conj().T @ (X @ psi)
 res
+
+# %%
+psi = np.sqrt(1/3)*ket0 + np.sqrt(2/3)*ket1
+
+# %%
+res = psi.conj().T @ ( Z @ psi)
+res
+
+# %%
+np.linalg.norm(psi)
 
 # %%
 psi = ketMinus;
@@ -554,6 +683,27 @@ res
 psi = ketPlusI
 res = psi.conj().T @ (Z @ psi)
 res
+
+# %% [markdown]
+# Calculate eigenvalue and eigenvector of Pauli matrices 
+
+# %%
+λ, v = np.linalg.eigh(X) 
+
+# %%
+λ
+
+# %%
+v[:,0]
+
+# %%
+ketMinus
+
+# %%
+v[:,1]
+
+# %%
+ketPlus
 
 # %% [markdown]
 # ## Quantum circuit
@@ -618,7 +768,7 @@ res = run_on_statevector_simulator(qc)
 res.get_statevector()
 
 # %%
-res.get_statevector().data.real
+H @ ket0
 
 # %%
 1/np.sqrt(2) * (ket0 + ket1)
@@ -630,6 +780,9 @@ qc.measure_all()
 qc.draw()
 
 # %%
+qc.draw("mpl")
+
+# %%
 res = run_on_qasm_simulator(qc)
 res.get_counts()
 
@@ -639,6 +792,12 @@ res.get_counts()
 # %%
 res = run_on_statevector_simulator(qc)
 res.get_statevector()
+
+# %%
+qc = QuantumCircuit(1)
+qc.h(0)
+qc.measure_all()
+qc.draw("mpl")
 
 # %% [markdown]
 # ### Multiple qubits quantum gates
@@ -654,9 +813,13 @@ res.get_statevector()
 
 # %%
 qc = QuantumCircuit(2)
-qc.x(0)
+qc.x(1)
+qc.barrier()
 qc.cx(0,1) # q0 is the control, q1 is target
 qc.measure_all()
+qc.draw("mpl")
+
+# %%
 qc.draw()
 
 # %%
@@ -672,7 +835,7 @@ res.get_counts()
 # %%
 qc = QuantumCircuit(1)
 qc.rx(0.1, 0) # 0.1 is theta
-qc.draw()
+qc.draw("mpl")
 
 # %%
 from qiskit.circuit import ParameterVector
@@ -683,18 +846,29 @@ theta = ParameterVector("theta", 1)
 # %%
 qc = QuantumCircuit(1)
 qc.rx(theta[0], 0)
-qc.draw()
+qc.draw("mpl")
 
 # %%
 # res = run_on_statevector_simulator(qc) # this will error
 
 # %%
-tqc = qc.assign_parameters([pi])
+tqc = qc.assign_parameters([pi/2])
+
+# %%
+tqc.draw("mpl")
+
+# %%
 res = run_on_statevector_simulator(tqc)
 res.get_statevector()
 
 # %%
-from qiskit.visualization import plot_bloch_multivector
+tqc.measure_all()
+res = run_on_qasm_simulator(tqc)
+res.get_counts()
+
+# %%
+tqc = qc.assign_parameters([pi/2])
+res = run_on_statevector_simulator(tqc)
 plot_bloch_multivector(res.get_statevector())
 
 # %% [markdown]
